@@ -18,3 +18,10 @@ text2img = function(text='Test'){
     readBin(file,'raw',n = file.info(file)$size)
     
 }
+
+
+#* @get /t2i
+#* @serializer contentType list(type='image/png')
+t2i = function(t='Test'){
+    text2img(t)
+}

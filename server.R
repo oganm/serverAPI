@@ -17,6 +17,8 @@ makeImage = function(text = 'Test',size = 60){
     return(img)
 }
 
+#* @param size Font size
+#* @param text text to write
 #* @get /text2img
 #* @serializer contentType list(type='image/png')
 text2img = function(text='Test', size = 60){
@@ -27,13 +29,16 @@ text2img = function(text='Test', size = 60){
     
 }
 
-
+#* @param s Font size
+#* @param t text to write
 #* @get /t2i
 #* @serializer contentType list(type='image/png')
 t2i = function(t='Test', s = 60){
     text2img(t, s)
 }
 
+#* @param s Font size
+#* @param t text to write
 #* @get /t2img
 t2img = function(res, t = 'Test', s = 60){
     file = tempfile(fileext = '.png')
@@ -41,28 +46,62 @@ t2img = function(res, t = 'Test', s = 60){
     image_write(img,file)
     image = knitr::imgur_upload(file = file)
     image = attributes(image)
-    res$setHeader(name = 'Location',image$XML$data$link[[1]])
+    res$setHeader(name = 'Location',image$XML$link[[1]])
     res$status = 301
 }
 
 
 #* @post /walterXML2iiJSON
+#* @get /walterXML2iiJSON
 #* @serializer contentType list(type='text/json')
 walterXML2iiJSON = function(req){
     startLine = grep(pattern = '<?xml',req$postBody,fixed = TRUE)
     endLine = grep(pattern = '</character',req$postBody, fixed = TRUE)
-    char = req$postBody[startLine:endLine] %>% paste(collapse = '\n')
-    ogChar = import5eChar:::processCharacter(char)
-    ogChar %>% improvedInitiativeJSON()
+    if(length(startLine)==1 && length(endLine)==1 && endLine > startLine){
+        char = req$postBody[startLine:endLine] %>% paste(collapse = '\n')
+        ogChar = import5eChar:::processCharacter(char)
+        jsonOut = ogChar %>% improvedInitiativeJSON()
+        return(jsonOut)
+    } else{
+        characterFile <- system.file("Tim_Fighter5", package = "import5eChar")
+        jsonOut = import5eChar::importCharacter(file = characterFile) %>% improvedInitiativeJSON()
+        return(jsonOut)
+    }
 }
 
 
 #* @post /walterXML2ogJSON
+#* @get /walterXML2ogJSON
 #* @serializer contentType list(type='text/json')
 walterXML2ogJSON = function(req){
     startLine = grep(pattern = '<?xml',req$postBody,fixed = TRUE)
     endLine = grep(pattern = '</character',req$postBody, fixed = TRUE)
-    char = req$postBody[startLine:endLine] %>% paste(collapse = '\n')
-    ogChar = import5eChar:::processCharacter(char)
-    ogChar %>% toJSON(pretty = TRUE)
+    if(length(startLine)==1 && length(endLine)==1 && endLine > startLine){
+        char = req$postBody[startLine:endLine] %>% paste(collapse = '\n')
+        ogChar = import5eChar:::processCharacter(char)
+        jsonOut = ogChar %>% toJSON(pretty = TRUE,keep_vec_names = TRUE)
+        return(jsonOut)
+    } else{
+        characterFile <- system.file("Tim_Fighter5", package = "import5eChar")
+        jsonOut = import5eChar::importCharacter(file = characterFile) %>% toJSON(pretty = TRUE, keep_vec_names= TRUE)
+        return(jsonOut)
+    }
+}
+
+#* @post /walterXML2ogPDF
+#* @get /walterXML2ogPDF
+#* @serializer contentType list(type='application/pdf')
+walterXML2ogPDF = function(req){
+    file = tempfile(fileext = '.pdf')
+    startLine = grep(pattern = '<?xml',req$postBody,fixed = TRUE)
+    endLine = grep(pattern = '</character',req$postBody, fixed = TRUE)
+    if(length(startLine)==1 && length(endLine)==1 && endLine > startLine){
+        char = req$postBody[startLine:endLine] %>% paste(collapse = '\n')
+        ogChar = import5eChar:::processCharacter(char)
+        ogChar %>% prettyPDF(file = file)
+    } else{
+        characterFile <- system.file("Tim_Fighter5", package = "import5eChar")
+        import5eChar::importCharacter(file = characterFile) %>% prettyPDF(file = file)
+    }
+    base::readBin(file,'raw',n = file.info(file)$size)
 }

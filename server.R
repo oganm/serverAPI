@@ -4,8 +4,12 @@ library(knitr)
 library(magrittr)
 library(import5eChar)
 library(jsonlite)
+library(digest)
 # testPlumb.R
 
+#* @apiTitle Ogan's API endpoints
+
+dir.create('images',showWarnings = FALSE)
 
 makeImage = function(text = 'Test',size = 60){
     if(nchar(text)>=1000){
@@ -17,31 +21,37 @@ makeImage = function(text = 'Test',size = 60){
     return(img)
 }
 
-#* @param size Font size
-#* @param text text to write
+#* Turn text into an image
+#* @param size:int Font size
+#* @param text:character text to write
 #* @get /text2img
 #* @serializer contentType list(type='image/png')
 text2img = function(text='Test', size = 60){
-    file = tempfile(fileext = '.png')
+    # file = tempfile(fileext = '.png')
+    file = file.path('images',paste0(digest::sha1(paste(text,size)),'.png'))
     img = makeImage(text = text, size = size)
     image_write(img,file)
+    on.exit(gc())
     base::readBin(file,'raw',n = file.info(file)$size)
-    
+
 }
 
-#* @param s Font size
-#* @param t text to write
+#* Turn text into an image with less characters
+#* @param s:int Font size
+#* @param t:character text to write
 #* @get /t2i
 #* @serializer contentType list(type='image/png')
 t2i = function(t='Test', s = 60){
     text2img(t, s)
 }
 
-#* @param s Font size
-#* @param t text to write
+#* Turn text into image, redirect to imgur
+#* @param s:int Font size
+#* @param t:character text to write
 #* @get /t2img
 t2img = function(res, t = 'Test', s = 60){
-    file = tempfile(fileext = '.png')
+    # file = tempfile(fileext = '.png')
+    file = file.path('images',paste0(digest::sha1(paste(t,s)),'.png'))
     img = makeImage(text = t, size = s)
     image_write(img,file)
     image = knitr::imgur_upload(file = file)
@@ -105,3 +115,4 @@ walterXML2ogPDF = function(req){
     }
     base::readBin(file,'raw',n = file.info(file)$size)
 }
+

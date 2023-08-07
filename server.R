@@ -117,3 +117,42 @@ walterXML2ogPDF = function(req){
     }
     base::readBin(file,'raw',n = file.info(file)$size)
 }
+
+
+#* Create a card based on a pdf template
+#* @param name:character Name of the card
+#* @param description:character card description
+#* @param imgur:logical set true to send to imgur
+#* @get /text2cardpdf
+#* @serializer contentType list(type='image/png')
+text2cardpdf = function(res , name = 'name', description = 'description',imgur = TRUE){
+    # magick package used to have a memory leak. this addresses that. 
+    # i am unsure if it's been fixed since
+    on.exit(gc())
+    
+    # read the fields of the pdf and fill them in a temporary file
+    fields = staplr::get_fields('card template.pdf')
+    fields$CardName$value = name
+    fields$Description$value = description
+    
+    # fill the pdf form and save it
+    tmp_pdf = tempfile(fileext = '.pdf')
+    staplr::set_fields('card template.pdf',tmp_pdf,fields)
+    
+    # read the pdf and save it as an image
+    img = magick::image_read_pdf(tmp_pdf)
+    tmp_img = tempfile(fileext = '.png')
+    magick::image_write(img, tmp_img)
+    
+    
+    # either save to imgur and redirect or serve the image
+    if(imgur){
+        image = knitr::imgur_upload(file = tmp_img)
+        image = attributes(image)
+        res$setHeader(name = 'Location',image$XML$link[[1]])
+        res$status = 301
+    } else{
+        base::readBin(tmp_img,'raw',n = file.info(tmp_img)$size)
+    }
+    
+}

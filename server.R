@@ -156,3 +156,39 @@ text2cardpdf = function(res , name = 'name', description = 'description',imgur =
     }
     
 }
+
+
+#* Create a card based on a pdf template
+#* @param name:character Name of the card
+#* @param description:character card description
+#* @param imgur:logical set true to send to imgur
+#* @get /text2cardpng
+#* @serializer contentType list(type='image/png')
+text2cardpng = function(res , name = 'name', description = 'description',imgur = TRUE){
+    # magick package used to have a memory leak. this addresses that. 
+    # i am unsure if it's been fixed since
+    on.exit(gc())
+    
+    
+    
+    img = magick::image_read('card template.png')
+    
+    # write the text on the specific locations of the image
+    img = magick::image_annotate(img,location = '+0+0', size = 120,text =name)
+    img = magick::image_annotate(img,location = '+0+630', size = 90,text =description)
+    
+    # save the image to a file
+    tmp_img = tempfile(fileext = '.png')
+    magick::image_write(img, tmp_img)
+    
+    
+    # either save to imgur and redirect or serve the image
+    if(imgur){
+        image = knitr::imgur_upload(file = tmp_img)
+        image = attributes(image)
+        res$setHeader(name = 'Location',image$XML$link[[1]])
+        res$status = 301
+    } else{
+        base::readBin(tmp_img,'raw',n = file.info(tmp_img)$size)
+    }    
+}

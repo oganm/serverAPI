@@ -174,8 +174,8 @@ text2cardpng = function(res , name = 'name', description = 'description',imgur =
     img = magick::image_read('card template.png')
     
     # write the text on the specific locations of the image
-    img = magick::image_annotate(img,location = '+0+0', size = 120,text =name)
-    img = magick::image_annotate(img,location = '+0+630', size = 90,text =description)
+    img = magick::image_annotate(img,location = '+0+0', size = 90,text =name)
+    img = magick::image_annotate(img,location = '+0+630', size = 60,text =description)
     
     # save the image to a file
     tmp_img = tempfile(fileext = '.png')

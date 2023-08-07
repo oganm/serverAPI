@@ -158,7 +158,7 @@ text2cardpdf = function(res , name = 'name', description = 'description',imgur =
 }
 
 
-#* Create a card based on a pdf template
+#* Create a card based on a png template
 #* @param name:character Name of the card
 #* @param description:character card description
 #* @param imgur:logical set true to send to imgur
